@@ -1,10 +1,14 @@
+use crate::middleware::SampleMiddleware;
 use actix_web::{web, Responder};
-
 pub struct HelloWorld;
 
 impl HelloWorld {
     pub fn configure(cfg: &mut actix_web::web::ServiceConfig) {
-        cfg.service(web::resource(Self::path()).route(web::get().to(hello_world)));
+        cfg.service(
+            web::resource(Self::path())
+                .route(web::get().to(hello_world))
+                .wrap(SampleMiddleware),
+        );
     }
 
     fn path() -> &'static str {
