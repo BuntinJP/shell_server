@@ -46,7 +46,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // do something with the request
         println!("Request path is: {}", req.path());
-
+        println!("{:?}", req.headers());
         self.service.call(req)
     }
 }
