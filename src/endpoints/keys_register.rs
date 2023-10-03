@@ -1,5 +1,5 @@
+use crate::types::{OnlyMessageResponse, RegisterRequest};
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
-use serde::Deserialize;
 use std::env;
 
 pub struct KeysRegister;
@@ -14,21 +14,14 @@ impl KeysRegister {
     }
 }
 
-#[derive(Deserialize)]
-pub struct RegisterRequest {
-    key_name: String,
-    key_value: String,
-}
-
 async fn register_key(req: HttpRequest, info: web::Json<RegisterRequest>) -> impl Responder {
     let master_password = env::var("MASTER_PASSWORD").expect("MASTER_PASSWORD must be set");
     if let Some(password) = req.headers().get("Auth") {
         match password.to_str() {
             Ok(password_str) if password_str == master_password => {
-                HttpResponse::Ok().body(format!(
-                    "Key {} registered with value {}",
-                    info.key_name, info.key_value
-                ))
+                HttpResponse::Ok().json(OnlyMessageResponse {
+                    message: format!("Key {} registered", info.key_name),
+                })
             }
             _ => HttpResponse::Forbidden().body("Incorrect password"),
         }

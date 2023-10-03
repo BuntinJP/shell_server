@@ -1,5 +1,6 @@
 mod endpoints;
 mod middleware;
+mod types;
 
 use actix_rt::main;
 use actix_web::{App, HttpServer};
