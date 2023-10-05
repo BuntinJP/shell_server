@@ -1,9 +1,8 @@
 use actix_service::Service;
-use actix_web::body::{BoxBody, MessageBody};
+use actix_web::body::BoxBody;
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse, Transform},
     http::header::HeaderMap,
-    web::Json,
     Error, HttpResponse,
 };
 use futures::future::{ok, Ready};
@@ -64,7 +63,7 @@ where
     }
 }
 
-fn auth(headers: &HeaderMap) -> bool {
+fn auth(_headers: &HeaderMap) -> bool {
     false
 }
 

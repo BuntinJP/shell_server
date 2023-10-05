@@ -4,7 +4,7 @@ mod types;
 
 use actix_rt::main;
 use actix_web::{App, HttpServer};
-use endpoints::{HelloWorld, KeysRegister};
+use endpoints::{HelloWorld, KeysRegister, Sudo, Users};
 use env_logger::Builder;
 use log::{info, LevelFilter};
 use rand::Rng;
@@ -14,7 +14,7 @@ use std::env;
 async fn main() -> std::io::Result<()> {
     // Initialize logging
     Builder::new().filter(None, LevelFilter::Info).init();
-    let master_password = match env::var("MASTER_PASSWORD") {
+    let master_password = match env::var("SS_MASTER_PASSWORD") {
         Ok(value) => {
             info!("MASTER_PASSWORD set to {}", value);
             value
@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     env::set_var("MASTER_PASSWORD", &master_password); // Set the master password
 
-    let port = env::var("PORT").unwrap_or_else(|_| String::from("54321"));
+    let port = env::var("SS_PORT").unwrap_or_else(|_| String::from("54321"));
     info!("Port set to {}", port);
     let bind_address = format!("127.0.0.1:{}", port);
     info!("Binding to {}", bind_address);
@@ -42,6 +42,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .configure(HelloWorld::configure)
             .configure(KeysRegister::configure)
+            .configure(Users::configure)
+            .configure(Sudo::configure)
     })
     .bind(bind_address)?
     .run()

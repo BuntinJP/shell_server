@@ -1,4 +1,4 @@
-use crate::types::{OnlyMessageResponse, RegisterRequest};
+use crate::types::{OnlyMessageBody, RegisterRequest};
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use std::env;
 
@@ -19,7 +19,7 @@ async fn register_key(req: HttpRequest, info: web::Json<RegisterRequest>) -> imp
     if let Some(password) = req.headers().get("Auth") {
         match password.to_str() {
             Ok(password_str) if password_str == master_password => {
-                HttpResponse::Ok().json(OnlyMessageResponse {
+                HttpResponse::Ok().json(OnlyMessageBody {
                     message: format!("Key {} registered", info.key_name),
                 })
             }
