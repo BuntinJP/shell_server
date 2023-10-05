@@ -1,5 +1,9 @@
 # ShellServer
 
+### WORNING
+
+**This program is not secure enough. Please use it at your own risk.**
+
 ## Endpoints
 
 ### [POST] /keys/register
