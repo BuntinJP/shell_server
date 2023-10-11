@@ -1,4 +1,5 @@
 use crate::endpoints::ep_utils::parse_output;
+use crate::middleware::AuthMiddleware;
 use crate::types::ExecRequest;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use std::process::Command;
@@ -7,7 +8,11 @@ pub struct Sudo;
 
 impl Sudo {
     pub fn configure(cfg: &mut actix_web::web::ServiceConfig) {
-        cfg.service(web::resource(Self::path()).route(web::post().to(exec_user)));
+        cfg.service(
+            web::resource(Self::path())
+                .wrap(AuthMiddleware)
+                .route(web::post().to(exec_user)),
+        );
     }
     fn path() -> &'static str {
         "/exec/sudo"

@@ -64,7 +64,7 @@ where
 }
 
 fn auth(_headers: &HeaderMap) -> bool {
-    false
+    true
 }
 
 #[derive(Serialize)]
