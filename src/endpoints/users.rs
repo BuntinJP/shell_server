@@ -1,4 +1,3 @@
-use crate::middleware::AuthMiddleware;
 use crate::types::{CommandError, CommandOutput, ExecRequest, ShellResponse, Status};
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use std::process::Command;
@@ -6,11 +5,7 @@ pub struct Users;
 
 impl Users {
     pub fn configure(cfg: &mut actix_web::web::ServiceConfig) {
-        cfg.service(
-            web::resource(Self::path())
-                .wrap(AuthMiddleware)
-                .route(web::post().to(exec_user)),
-        );
+        cfg.service(web::resource(Self::path()).route(web::post().to(exec_user)));
     }
     fn path() -> &'static str {
         "/exec/user"
