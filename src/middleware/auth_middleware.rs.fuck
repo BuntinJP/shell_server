@@ -1,0 +1,113 @@
+use actix_service::Service;
+use actix_web::body::BoxBody;
+use actix_web::error::ResponseError;
+use actix_web::http::StatusCode;
+use actix_web::{
+    dev::{ServiceRequest, ServiceResponse, Transform},
+    http::header::HeaderMap,
+    Error, HttpResponse,
+};
+use futures::future::{ok, Ready};
+use futures_util::future::LocalBoxFuture;
+use once_cell::sync::Lazy;
+use serde::Serialize;
+use std::sync::{Arc, Mutex};
+use std::task::{Context, Poll};
+
+static PASSWORD_CACHE: Lazy<Arc<Mutex<Vec<String>>>> = Lazy::new(|| {
+    Arc::new(Mutex::new(vec![
+        "password1".to_string(),
+        "password2".to_string(),
+        "password3".to_string(),
+    ]))
+});
+
+pub struct AuthMiddleware;
+
+impl<S> Transform<S, ServiceRequest> for AuthMiddleware
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error>
+        + 'static
+        + Clone,
+    S::Future: 'static,
+{
+    type Response = ServiceResponse<BoxBody>;
+    type Error = Error;
+    type InitError = ();
+    type Transform = AuthMiddlewareTransform<S>;
+    type Future = Ready<Result<Self::Transform, Self::InitError>>;
+    fn new_transform(&self, service: S) -> Self::Future {
+        ok(AuthMiddlewareTransform { service })
+    }
+}
+
+pub struct AuthMiddlewareTransform<S> {
+    service: S,
+}
+
+impl<S> Service<ServiceRequest> for AuthMiddlewareTransform<S>
+where
+    S: Service<ServiceRequest, Response = ServiceResponse<BoxBody>, Error = Error>
+        + Clone
+        + 'static,
+    S::Future: 'static,
+{
+    type Response = ServiceResponse<BoxBody>;
+    type Error = Error;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.service.poll_ready(cx)
+    }
+
+    fn call(&self, req: ServiceRequest) -> Self::Future {
+        let headers = req.headers().clone();
+        let service = self.service.clone(); // `mut` を削除
+        Box::pin(async move {
+            if auth(&headers) {
+                service.call(req).await
+            } else {
+                let error = UnauthorizedError;
+                let res: ServiceResponse<BoxBody> = req.error_response(error);
+                Ok(res)
+            }
+        })
+    }
+}
+
+fn auth(headers: &HeaderMap) -> bool {
+    if let Some(auth_header) = headers.get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            let passwords = PASSWORD_CACHE.lock().unwrap();
+            return passwords.iter().any(|pw| pw == auth_str);
+        }
+    }
+    false
+}
+
+#[derive(Serialize)]
+struct AuthErrorResponse {
+    error: String,
+}
+
+#[derive(Debug)]
+struct UnauthorizedError;
+
+impl ResponseError for UnauthorizedError {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::UNAUTHORIZED
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        let error_response = AuthErrorResponse {
+            error: "Unauthorized".to_string(),
+        };
+        HttpResponse::Unauthorized().json(error_response)
+    }
+}
+
+impl std::fmt::Display for UnauthorizedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Unauthorized")
+    }
+}

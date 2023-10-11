@@ -4,6 +4,8 @@
 
 **This program is not secure enough. Please use it at your own risk.**
 
+Rust と Web の相性を確認したかったのと、スレッドセーフなキャッシュ`Arc<Mutex<T>>`を使ってみたかった。
+
 ## Endpoints
 
 ### [POST] /keys/register
