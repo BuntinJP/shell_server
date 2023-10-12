@@ -46,20 +46,24 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        if auth(&req) {
-            let fut = self.service.call(req);
-            Box::pin(async move {
-                let res = fut.await?;
-                Ok(res)
-            })
-        } else {
-            let error_response = AuthErrorResponse {
-                error: "Unauthorized".to_string(),
-            };
-            let response: HttpResponse =
-                HttpResponse::Unauthorized().body(serde_json::to_string(&error_response).unwrap());
-            let res: ServiceResponse<BoxBody> = ServiceResponse::new(req.into_parts().0, response);
-            Box::pin(async move { Ok(res) })
+        match auth(&req) {
+            Ok(true) => {
+                let fut = self.service.call(req);
+                Box::pin(async move {
+                    let res = fut.await?;
+                    Ok(res)
+                })
+            }
+            Ok(false) | Err(_) => {
+                let error_response = AuthErrorResponse {
+                    error: "Unauthorized".to_string(),
+                };
+                let response: HttpResponse = HttpResponse::Unauthorized()
+                    .body(serde_json::to_string(&error_response).unwrap());
+                let res: ServiceResponse<BoxBody> =
+                    ServiceResponse::new(req.into_parts().0, response);
+                Box::pin(futures::future::ok(res))
+            }
         }
     }
 }

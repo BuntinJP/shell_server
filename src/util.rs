@@ -1,21 +1,8 @@
 use std::vec::Vec;
 
-use rand::seq::SliceRandom;
-use rand::Rng;
 use reqwest::Error;
 use serde::Deserialize;
 
-pub fn generate_token(length: usize) -> String {
-    let charset: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-                           abcdefghijklmnopqrstuvwxyz\
-                           0123456789\
-                           !\"#$%&'()*+-./:;<=>?@[\\]^_`{|}~"; // カンマを除外
-
-    let token: String = (0..length)
-        .map(|_| *charset.choose(&mut rand::thread_rng()).unwrap() as char)
-        .collect();
-    token
-}
 #[derive(Deserialize)]
 struct Response {
     success: bool,
@@ -24,14 +11,14 @@ struct Response {
 
 #[derive(Deserialize)]
 struct Result {
-    query: String,
+    _query: String,
     results: Vec<KeyValue>,
 }
 
 #[derive(Deserialize)]
 struct KeyValue {
-    KeyName: String,
-    KeyValue: String,
+    key_name: String,
+    key_value: String,
 }
 
 /* fn main() {
@@ -53,8 +40,8 @@ pub async fn get_passwords() -> std::result::Result<Vec<String>, Error> {
                 if response.success {
                     let mut passwords = Vec::new();
                     for kv in response.result.results {
-                        println!("KeyName: {}, KeyValue: {}", kv.KeyName, kv.KeyValue);
-                        passwords.push(kv.KeyValue);
+                        println!("a key setted(name:{},value:{})", kv.key_name, kv.key_value);
+                        passwords.push(kv.key_value);
                     }
                     Ok(passwords)
                 } else {
