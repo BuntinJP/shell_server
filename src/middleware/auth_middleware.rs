@@ -2,12 +2,13 @@ use actix_service::Service;
 use actix_web::body::BoxBody;
 use actix_web::{
     dev::{ServiceRequest, ServiceResponse, Transform},
-    http::header::HeaderMap,
+    web::Data,
     Error, HttpResponse,
 };
 use futures::future::{ok, Ready};
 use futures_util::future::LocalBoxFuture;
 use serde::Serialize;
+use std::sync::Arc;
 use std::task::{Context, Poll}; // 追加
 
 pub struct AuthMiddleware;
@@ -45,7 +46,7 @@ where
     }
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
-        if auth(&req.headers()) {
+        if auth(&req) {
             let fut = self.service.call(req);
             Box::pin(async move {
                 let res = fut.await?;
@@ -63,8 +64,18 @@ where
     }
 }
 
-fn auth(_headers: &HeaderMap) -> bool {
-    true
+fn auth(req: &ServiceRequest) -> Result<bool, &'static str> {
+    if let Some(passwords) = req.app_data::<Data<Arc<Vec<String>>>>() {
+        let headers = req.headers();
+        if let Some(auth_header) = headers.get("Authorization") {
+            if let Ok(auth_str) = auth_header.to_str() {
+                return Ok(passwords.iter().any(|pw| pw == auth_str));
+            }
+        }
+        Ok(false)
+    } else {
+        Err("Passwords not found")
+    }
 }
 
 #[derive(Serialize)]

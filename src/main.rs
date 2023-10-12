@@ -1,14 +1,20 @@
 mod endpoints;
 mod middleware;
 mod types;
+mod util;
 
 use actix_rt::main;
-use actix_web::{App, HttpServer};
+use actix_web::{web::Data, App, HttpServer};
 use endpoints::{HelloWorld, KeysRegister, Sudo, Users};
 use env_logger::Builder;
 use log::{info, LevelFilter};
 use rand::Rng;
 use std::env;
+use std::sync::Arc;
+
+/*
+https://dataworker.buntin.workers.dev/db/keys/all
+*/
 
 #[main]
 async fn main() -> std::io::Result<()> {
@@ -30,6 +36,9 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    let pss = util::get_passwords().await.unwrap();
+    let password_cache = Arc::new(pss);
+
     env::set_var("MASTER_PASSWORD", &master_password); // Set the master password
 
     let port = env::var("SS_PORT").unwrap_or_else(|_| String::from("54321"));
@@ -38,8 +47,9 @@ async fn main() -> std::io::Result<()> {
     info!("Binding to {}", bind_address);
 
     //print server settings
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(Data::new(password_cache.clone()))
             .configure(HelloWorld::configure)
             .configure(KeysRegister::configure)
             .configure(Users::configure)
