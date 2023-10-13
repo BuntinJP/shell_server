@@ -1,5 +1,6 @@
 use std::vec::Vec;
-
+extern crate dotenv;
+use dotenv::dotenv;
 use reqwest::Error;
 use serde::Deserialize;
 
@@ -31,10 +32,20 @@ https://dataworker.buntin.workers.dev/db/keys/all
 */
 
 pub async fn get_passwords() -> std::result::Result<Vec<String>, Error> {
+    dotenv().ok();
     let url = "https://dataworker.buntin.workers.dev/db/keys/all";
 
     let client = reqwest::Client::new();
-    match client.get(url).send().await {
+    let value = match dotenv::var("WORKER_PASSWORD") {
+        Ok(value) => {
+            value
+        }
+        Err(_) => {
+            //stop the program
+            panic!("WORKER_PASSWORD is not set");
+        }
+    };
+    match client.get(url).header(reqwest::header::AUTHORIZATION, value).send().await {
         Ok(resp) => match resp.json::<Response>().await {
             Ok(response) => {
                 if response.success {

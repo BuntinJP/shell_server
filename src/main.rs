@@ -5,7 +5,7 @@ mod util;
 
 use actix_rt::main;
 use actix_web::{web::Data, App, HttpServer};
-use endpoints::{HelloWorld, KeysRegister, Sudo, Users};
+use endpoints::{HelloWorld, KeysRegister, SctlSv, Sudo, Users};
 use env_logger::Builder;
 use log::{info, LevelFilter};
 use rand::Rng;
@@ -18,7 +18,6 @@ https://dataworker.buntin.workers.dev/db/keys/all
 
 #[main]
 async fn main() -> std::io::Result<()> {
-    // Initialize logging
     Builder::new().filter(None, LevelFilter::Info).init();
     let master_password = match env::var("SS_MASTER_PASSWORD") {
         Ok(value) => {
@@ -54,6 +53,7 @@ async fn main() -> std::io::Result<()> {
             .configure(KeysRegister::configure)
             .configure(Users::configure)
             .configure(Sudo::configure)
+            .configure(SctlSv::configure)
     })
     .bind(bind_address)?
     .run()

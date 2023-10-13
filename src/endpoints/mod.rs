@@ -7,9 +7,11 @@ mod ep_utils;
 mod hello_world;
 mod keys_register;
 mod sudo;
+mod systemctl_rt;
 mod users;
 
 pub use self::hello_world::HelloWorld;
 pub use self::keys_register::KeysRegister;
 pub use self::sudo::Sudo;
+pub use self::systemctl_rt::SctlSv;
 pub use self::users::Users;
